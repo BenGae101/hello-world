@@ -48,7 +48,7 @@
         // 1. FONCTION POUR CHARGER LES RECETTES DEPUIS LA BASE DE DONNÉES
         async function loadRecipes() {
             // Demander à Supabase toutes les lignes de la table "recipes"
-            const { data, error } = await supabaseCLient
+            const { data, error } = await supabaseClient
                 .from('recipes')
                 .select('*')
                 .order('created_at', { ascending: false });
