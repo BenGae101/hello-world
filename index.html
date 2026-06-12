@@ -65,14 +65,14 @@
         async function loadRecipes() {
             loadingMessage.innerText = "Chargement des recettes depuis la base de données...";
             
-            // On demande simplement les recettes (sans tri forcé pour éviter les blocages si created_at est vide)
             const { data, error } = await supabaseClient
                 .from('recipes')
-                .select('*');
+                .select('*')
+                .order('created_at', { ascending: false });
 
             if (error) {
                 console.error("Erreur de chargement :", error);
-                loadingMessage.innerText = "Impossible de charger les recettes : " + error.message;
+                loadingMessage.innerText = "Impossible de charger les recettes.";
                 return;
             }
 
@@ -85,34 +85,31 @@
 
             // Afficher chaque recette récupérée
             data.forEach(recipe => {
-                // Sécurité si created_at n'existe pas ou est vide
                 const dateTexte = recipe.created_at ? new Date(recipe.created_at).toLocaleDateString('fr-FR') : "Date inconnue";
                 
-                // Sécurité pour trouver l'ID de la recette (gère id, ID ou id_recette)
-                const idUnique = recipe.id || recipe.ID || Object.values(recipe)[0];
-
                 const recipeCard = document.createElement('div');
                 recipeCard.className = 'recette-card';
                 recipeCard.innerHTML = `
-                    <h3>${recipe.title || "Sans titre"}</h3>
+                    <h3>${recipe.title}</h3>
                     <p class="date">Ajouté le ${dateTexte}</p>
-                    <p style="white-space: pre-line;">${recipe.content || "Pas de contenu"}</p>
-                    <button class="btn-delete" onclick="deleteRecipe('${idUnique}')">Supprimer</button>
+                    <p style="white-space: pre-line;">${recipe.content}</p>
+                    <button class="btn-delete" onclick="deleteRecipe(\`${recipe.title}\`)">Supprimer</button>
                 `;
                 container.appendChild(recipeCard);
             });
         }
 
         // 2. FONCTION POUR SUPPRIMER UNE RECETTE
-        async function deleteRecipe(recipeId) {
-            if (!confirm("Voulez-vous vraiment supprimer cette recette ?")) {
+        async function deleteRecipe(recipeTitle) {
+            if (!confirm(`Voulez-vous vraiment supprimer la recette "${recipeTitle}" ?`)) {
                 return;
             }
 
+            // On cible la ligne en disant : supprime là où la colonne "title" est égale au titre cliqué
             const { error } = await supabaseClient
                 .from('recipes')
                 .delete()
-                .or(`id.eq.${recipeId},ID.eq.${recipeId}`); // Gère 'id' ou 'ID'
+                .eq('title', recipeTitle);
 
             if (error) {
                 alert("Erreur lors de la suppression : " + error.message);
@@ -140,7 +137,7 @@
             }
         });
 
-        // Charger les recettes automatiquement dès que la page s'ouvre
+        // Charger les recettes au démarrage
         loadRecipes();
     </script>
 </body>
