@@ -2,9 +2,99 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Hello Worldd</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recettes de Famille - Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        h1 { color: #333; }
+        form {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        input, textarea, button {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover { background-color: #45a049; }
+        .recette-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border-left: 5px solid #4CAF50;
+        }
+    </style>
 </head>
 <body>
-    <h1>saluuut 2</h1>
+
+    <h1>Le Carnet de Recettes Familial</h1>
+    
+    <form id="recipeForm">
+        <h3>Ajouter une recette (Test Local)</h3>
+        <input type="text" id="recipeTitle" placeholder="Nom du plat (ex: Tarte aux pommes)" required>
+        <textarea id="recipeContent" placeholder="Ingrédients et étapes..." rows="4" required></textarea>
+        <button type="submit">Partager la recette</button>
+    </form>
+
+    <h2>Les Recettes de la Famille</h2>
+    <div id="recipesContainer">
+        <p id="noRecipeMessage">Aucune recette pour le moment. Utilisez le formulaire ci-dessus !</p>
+    </div>
+
+    <script>
+        const form = document.getElementById('recipeForm');
+        const container = document.getElementById('recipesContainer');
+        const noRecipeMessage = document.getElementById('noRecipeMessage');
+
+        // Écouter le clic sur le bouton de soumission du formulaire
+        form.addEventListener('submit', function(event) {
+            // Empêcher la page de se recharger par défaut
+            event.preventDefault();
+
+            // Récupérer les valeurs tapées par l'utilisateur
+            const title = document.getElementById('recipeTitle').value;
+            const content = document.getElementById('recipeContent').value;
+
+            // Masquer le message "Aucune recette" si c'est la première
+            if (noRecipeMessage) {
+                noRecipeMessage.style.display = 'none';
+            }
+
+            // Créer un nouvel élément HTML (une carte) pour la recette
+            const recipeCard = document.createElement('div');
+            recipeCard.className = 'recette-card';
+            recipeCard.innerHTML = `
+                <h3>${title}</h3>
+                <p style="white-space: pre-line;">${content}</p>
+            `;
+
+            // Ajouter cette carte en haut de la liste
+            container.insertBefore(recipeCard, container.firstChild);
+
+            // Vider le formulaire pour la prochaine saisie
+            form.reset();
+        });
+    </script>
 </body>
 </html>
