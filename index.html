@@ -55,42 +55,93 @@
         const SUPABASE_URL = "https://zjcyeayuegaaxgptsjsl.supabase.co"; 
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpqY3llYXl1ZWdhYXhncHRzanNsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNDc5OTcsImV4cCI6MjA5NjgyMzk5N30.3qih46WektX9h_rhcRAKZvufIj5TACZTFAS8OmSa0v4";
 
-        // Initialisation de la connexion avec Supabase
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         const form = document.getElementById('recipeForm');
         const container = document.getElementById('recipesContainer');
         const loadingMessage = document.getElementById('loadingMessage');
 
-        // 1. FONCTION POUR CHARGER LES RECETTES DEPUIS LA BASE DE DONNÉES
+        // 1. FONCTION POUR CHARGER LES RECETTES
         async function loadRecipes() {
+            loadingMessage.innerText = "Chargement des recettes depuis la base de données...";
+            
+            // On demande simplement les recettes (sans tri forcé pour éviter les blocages si created_at est vide)
             const { data, error } = await supabaseClient
                 .from('recipes')
-                .select('*')
-                .order('created_at', { ascending: false });
+                .select('*');
 
             if (error) {
                 console.error("Erreur de chargement :", error);
-                loadingMessage.innerText = "Impossible de charger les recettes.";
+                loadingMessage.innerText = "Impossible de charger les recettes : " + error.message;
                 return;
             }
 
             container.innerHTML = "";
 
-            if (data.length === 0) {
+            if (!data || data.length === 0) {
                 container.innerHTML = "<p>Aucune recette dans la base de données pour le moment.</p>";
                 return;
             }
 
             // Afficher chaque recette récupérée
             data.forEach(recipe => {
-                const date = new Date(recipe.created_at).toLocaleDateString('fr-FR');
+                // Sécurité si created_at n'existe pas ou est vide
+                const dateTexte = recipe.created_at ? new Date(recipe.created_at).toLocaleDateString('fr-FR') : "Date inconnue";
+                
+                // Sécurité pour trouver l'ID de la recette (gère id, ID ou id_recette)
+                const idUnique = recipe.id || recipe.ID || Object.values(recipe)[0];
+
                 const recipeCard = document.createElement('div');
                 recipeCard.className = 'recette-card';
                 recipeCard.innerHTML = `
-                    <h3>${recipe.title}</h3>
-                    <p class="date">Ajouté le ${date}</p>
-                    <p style="white-space: pre-line;">${recipe.content}</p>
-                    <button class="btn-delete" onclick="deleteRecipe('${recipe.id}')">Supprimer</button>
+                    <h3>${recipe.title || "Sans titre"}</h3>
+                    <p class="date">Ajouté le ${dateTexte}</p>
+                    <p style="white-space: pre-line;">${recipe.content || "Pas de contenu"}</p>
+                    <button class="btn-delete" onclick="deleteRecipe('${idUnique}')">Supprimer</button>
                 `;
-                container.appendChild(recipe
+                container.appendChild(recipeCard);
+            });
+        }
+
+        // 2. FONCTION POUR SUPPRIMER UNE RECETTE
+        async function deleteRecipe(recipeId) {
+            if (!confirm("Voulez-vous vraiment supprimer cette recette ?")) {
+                return;
+            }
+
+            const { error } = await supabaseClient
+                .from('recipes')
+                .delete()
+                .or(`id.eq.${recipeId},ID.eq.${recipeId}`); // Gère 'id' ou 'ID'
+
+            if (error) {
+                alert("Erreur lors de la suppression : " + error.message);
+            } else {
+                loadRecipes();
+            }
+        }
+
+        // 3. ÉCOUTER LA SOUMISSION DU FORMULAIRE
+        form.addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const title = document.getElementById('recipeTitle').value;
+            const content = document.getElementById('recipeContent').value;
+
+            const { error } = await supabaseClient
+                .from('recipes')
+                .insert([{ title: title, content: content }]);
+
+            if (error) {
+                alert("Erreur lors de l'enregistrement : " + error.message);
+            } else {
+                form.reset();
+                loadRecipes();
+            }
+        });
+
+        // Charger les recettes automatiquement dès que la page s'ouvre
+        loadRecipes();
+    </script>
+</body>
+</html>
