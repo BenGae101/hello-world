@@ -3,98 +3,107 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Recettes de Famille - Test</title>
+    <title>Recettes de Famille - Test Base de Données</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 600px;
-            margin: 40px auto;
-            padding: 20px;
-            background-color: #f9f9f9;
-        }
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; background-color: #f9f9f9; }
         h1 { color: #333; }
-        form {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-        }
-        input, textarea, button {
-            width: 100%;
-            padding: 10px;
-            margin: 8px 0;
-            box-sizing: border-box;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-        button {
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            cursor: pointer;
-            font-weight: bold;
-        }
+        form { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        input, textarea, button { width: 100%; padding: 10px; margin: 8px 0; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        button { background-color: #4CAF50; color: white; border: none; cursor: pointer; font-weight: bold; }
         button:hover { background-color: #45a049; }
-        .recette-card {
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 10px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            border-left: 5px solid #4CAF50;
-        }
+        .recette-card { background: white; padding: 15px; border-radius: 8px; margin-top: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-left: 5px solid #4CAF50; }
+        .date { font-size: 0.8rem; color: #888; }
     </style>
 </head>
 <body>
 
-    <h1>Le Carnet de Recettes Familial</h1>
+    <h1>Le Carnet de Recettes en Ligne</h1>
     
     <form id="recipeForm">
-        <h3>Ajouter une recette (Test Local)</h3>
-        <input type="text" id="recipeTitle" placeholder="Nom du plat (ex: Tarte aux pommes)" required>
+        <h3>Partager une vraie recette</h3>
+        <input type="text" id="recipeTitle" placeholder="Nom du plat (ex: Gratin de courgettes)" required>
         <textarea id="recipeContent" placeholder="Ingrédients et étapes..." rows="4" required></textarea>
-        <button type="submit">Partager la recette</button>
+        <button type="submit">Enregistrer définitivement</button>
     </form>
 
-    <h2>Les Recettes de la Famille</h2>
+    <h2>Les Recettes enregistrées</h2>
     <div id="recipesContainer">
-        <p id="noRecipeMessage">Aucune recette pour le moment. Utilisez le formulaire ci-dessus !</p>
+        <p id="loadingMessage">Chargement des recettes depuis la base de données...</p>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <script>
+        // CONFIGURATION SUPABASE : Remplacez les valeurs ci-dessous
+        const SUPABASE_URL = "https://zjcyeayuegaaxgptsjsl.supabase.co/rest/v1/"; 
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpqY3llYXl1ZWdhYXhncHRzanNsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNDc5OTcsImV4cCI6MjA5NjgyMzk5N30.3qih46WektX9h_rhcRAKZvufIj5TACZTFAS8OmSa0v4";
+
+        // Initialisation de la connexion avec Supabase
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
         const form = document.getElementById('recipeForm');
         const container = document.getElementById('recipesContainer');
-        const noRecipeMessage = document.getElementById('noRecipeMessage');
+        const loadingMessage = document.getElementById('loadingMessage');
 
-        // Écouter le clic sur le bouton de soumission du formulaire
-        form.addEventListener('submit', function(event) {
-            // Empêcher la page de se recharger par défaut
+        // 1. FONCTION POUR CHARGER LES RECETTES DEPUIS LA BASE DE DONNÉES
+        async function loadRecipes() {
+            // Demander à Supabase toutes les lignes de la table "recipes"
+            const { data, error } = await supabase
+                .from('recipes')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error("Erreur de chargement :", error);
+                loadingMessage.innerText = "Impossible de charger les recettes.";
+                return;
+            }
+
+            // Effacer le message de chargement
+            container.innerHTML = "";
+
+            if (data.length === 0) {
+                container.innerHTML = "<p>Aucune recette dans la base de données pour le moment.</p>";
+                return;
+            }
+
+            // Afficher chaque recette récupérée
+            data.forEach(recipe => {
+                const date = new Date(recipe.created_at).toLocaleDateString('fr-FR');
+                const recipeCard = document.createElement('div');
+                recipeCard.className = 'recette-card';
+                recipeCard.innerHTML = `
+                    <h3>${recipe.title}</h3>
+                    <p class="date">Ajouté le ${date}</p>
+                    <p style="white-space: pre-line;">${recipe.content}</p>
+                `;
+                container.appendChild(recipeCard);
+            });
+        }
+
+        // 2. ÉCOUTER LA SOUMISSION DU FORMULAIRE POUR SAUVEGARDER
+        form.addEventListener('submit', async function(event) {
             event.preventDefault();
 
-            // Récupérer les valeurs tapées par l'utilisateur
             const title = document.getElementById('recipeTitle').value;
             const content = document.getElementById('recipeContent').value;
 
-            // Masquer le message "Aucune recette" si c'est la première
-            if (noRecipeMessage) {
-                noRecipeMessage.style.display = 'none';
+            // Envoyer la nouvelle recette à Supabase
+            const { error } = await supabase
+                .from('recipes')
+                .insert([{ title: title, content: content }]);
+
+            if (error) {
+                alert("Erreur lors de l'enregistrement : " + error.message);
+            } else {
+                form.reset();
+                // Recharger la liste pour afficher la nouvelle recette
+                loadRecipes();
             }
-
-            // Créer un nouvel élément HTML (une carte) pour la recette
-            const recipeCard = document.createElement('div');
-            recipeCard.className = 'recette-card';
-            recipeCard.innerHTML = `
-                <h3>${title}</h3>
-                <p style="white-space: pre-line;">${content}</p>
-            `;
-
-            // Ajouter cette carte en haut de la liste
-            container.insertBefore(recipeCard, container.firstChild);
-
-            // Vider le formulaire pour la prochaine saisie
-            form.reset();
         });
+
+        // Charger les recettes automatiquement dès que la page s'ouvre
+        loadRecipes();
     </script>
 </body>
 </html>
