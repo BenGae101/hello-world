@@ -11,8 +11,25 @@
         input, textarea, button { width: 100%; padding: 10px; margin: 8px 0; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
         button { background-color: #4CAF50; color: white; border: none; cursor: pointer; font-weight: bold; }
         button:hover { background-color: #45a049; }
-        .recette-card { background: white; padding: 15px; border-radius: 8px; margin-top: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-left: 5px solid #4CAF50; }
+        .recette-card { position: relative; background: white; padding: 15px; border-radius: 8px; margin-top: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-left: 5px solid #4CAF50; }
         .date { font-size: 0.8rem; color: #888; }
+        
+        /* Style pour le bouton Supprimer */
+        .btn-delete {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background-color: #ff4d4d;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            width: auto;
+            margin: 0;
+        }
+        .btn-delete:hover { background-color: #ff1a1a; }
     </style>
 </head>
 <body>
@@ -34,7 +51,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <script>
-        // CONFIGURATION SUPABASE : Remplacez les valeurs ci-dessous
+        // CONFIGURATION SUPABASE
         const SUPABASE_URL = "https://zjcyeayuegaaxgptsjsl.supabase.co"; 
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpqY3llYXl1ZWdhYXhncHRzanNsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNDc5OTcsImV4cCI6MjA5NjgyMzk5N30.3qih46WektX9h_rhcRAKZvufIj5TACZTFAS8OmSa0v4";
 
@@ -47,7 +64,6 @@
 
         // 1. FONCTION POUR CHARGER LES RECETTES DEPUIS LA BASE DE DONNÉES
         async function loadRecipes() {
-            // Demander à Supabase toutes les lignes de la table "recipes"
             const { data, error } = await supabaseClient
                 .from('recipes')
                 .select('*')
@@ -59,7 +75,6 @@
                 return;
             }
 
-            // Effacer le message de chargement
             container.innerHTML = "";
 
             if (data.length === 0) {
@@ -76,34 +91,6 @@
                     <h3>${recipe.title}</h3>
                     <p class="date">Ajouté le ${date}</p>
                     <p style="white-space: pre-line;">${recipe.content}</p>
+                    <button class="btn-delete" onclick="deleteRecipe('${recipe.id}')">Supprimer</button>
                 `;
-                container.appendChild(recipeCard);
-            });
-        }
-
-        // 2. ÉCOUTER LA SOUMISSION DU FORMULAIRE POUR SAUVEGARDER
-        form.addEventListener('submit', async function(event) {
-            event.preventDefault();
-
-            const title = document.getElementById('recipeTitle').value;
-            const content = document.getElementById('recipeContent').value;
-
-            // Envoyer la nouvelle recette à Supabase
-            const { error } = await supabaseClient
-                .from('recipes')
-                .insert([{ title: title, content: content }]);
-
-            if (error) {
-                alert("Erreur lors de l'enregistrement : " + error.message);
-            } else {
-                form.reset();
-                // Recharger la liste pour afficher la nouvelle recette
-                loadRecipes();
-            }
-        });
-
-        // Charger les recettes automatiquement dès que la page s'ouvre
-        loadRecipes();
-    </script>
-</body>
-</html>
+                container.appendChild(recipe
