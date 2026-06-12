@@ -39,7 +39,7 @@
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpqY3llYXl1ZWdhYXhncHRzanNsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNDc5OTcsImV4cCI6MjA5NjgyMzk5N30.3qih46WektX9h_rhcRAKZvufIj5TACZTFAS8OmSa0v4";
 
         // Initialisation de la connexion avec Supabase
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         const form = document.getElementById('recipeForm');
         const container = document.getElementById('recipesContainer');
@@ -48,7 +48,7 @@
         // 1. FONCTION POUR CHARGER LES RECETTES DEPUIS LA BASE DE DONNÉES
         async function loadRecipes() {
             // Demander à Supabase toutes les lignes de la table "recipes"
-            const { data, error } = await supabase
+            const { data, error } = await supabaseCLient
                 .from('recipes')
                 .select('*')
                 .order('created_at', { ascending: false });
@@ -89,7 +89,7 @@
             const content = document.getElementById('recipeContent').value;
 
             // Envoyer la nouvelle recette à Supabase
-            const { error } = await supabase
+            const { error } = await supabaseClient
                 .from('recipes')
                 .insert([{ title: title, content: content }]);
 
